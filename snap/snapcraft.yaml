@@ -12,12 +12,12 @@ grade: stable
 confinement: strict
 
 architectures:
-  - build-on: amd64
-  - build-on: arm64
+  - amd64
+  - arm64
 
 apps:
-  aws-greengrass-lite:
-    command: usr/bin/ggl-core
+  ggconfigd:
+    command: usr/bin/ggconfigd
     daemon: simple
     plugs:
       - network
@@ -27,31 +27,15 @@ apps:
       - mount-observe
       - process-control
       - log-observe
+  iotcored:
+    command: usr/bin/iotcored
+    plugs:
+      - network
+      - network-bind
+  ggl-cli:
+    command: usr/bin/ggl-cli
 
 parts:
   aws-greengrass-lite:
-    plugin: cmake
+    plugin: dump
     source: .
-    cmake-parameters:
-      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
-      - -DGGL_SYSTEMD_SERVICE_BUILD=OFF
-      - -DCMAKE_INSTALL_PREFIX=/usr
-    build-packages:
-      - build-essential
-      - cmake
-      - pkg-config
-      - libssl-dev
-      - libcurl4-openssl-dev
-      - libjson-c-dev
-      - libsystemd-dev
-    stage-packages:
-      - libssl3
-      - libcurl4
-      - libjson-c5
-      - libsystemd0
-    override-build: |
-      craftctl default
-      # Create necessary directories
-      mkdir -p $CRAFT_PART_INSTALL/etc/greengrass
-      mkdir -p $CRAFT_PART_INSTALL/var/lib/greengrass
-      mkdir -p $CRAFT_PART_INSTALL/var/log/greengrass
