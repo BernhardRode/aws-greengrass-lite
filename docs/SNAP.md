@@ -1,6 +1,7 @@
 # AWS Greengrass Lite Snap Package
 
-This document describes how to install and use AWS Greengrass Lite as a Snap package.
+This document describes how to install and use AWS Greengrass Lite as a 
+Snap package.
 
 ## Installation
 
@@ -34,7 +35,8 @@ sudo snap connect aws-greengrass-lite:log-observe
 
 ## Usage
 
-The snap package runs as a daemon service. You can control it using standard snap commands:
+The snap package runs as a daemon service. You can control it using 
+standard snap commands:
 
 ```bash
 # Start the service
@@ -63,7 +65,8 @@ Configuration files are stored in:
 
 ### Permission Issues
 
-If you encounter permission issues, ensure all required interfaces are connected:
+If you encounter permission issues, ensure all required interfaces are 
+connected:
 
 ```bash
 snap connections aws-greengrass-lite

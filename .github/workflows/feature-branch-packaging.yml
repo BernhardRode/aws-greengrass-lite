@@ -26,7 +26,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/podman-x86-64-image.tar
-          key: ${{ runner.os }}-podman-${{ hashFiles('misc/buildtestcontainer/*') }}
+          key: >
+            ${{ runner.os }}-podman-${{
+            hashFiles('misc/buildtestcontainer/*') }}
 
       - name: Build container
         run: |
@@ -39,7 +41,8 @@ jobs:
 
       - name: Build packages
         run: |
-          podman run -v $PWD/.:/aws-greengrass-lite --replace --name ggl container:latest bash -c "
+          podman run -v $PWD/.:/aws-greengrass-lite --replace \
+            --name ggl container:latest bash -c "
             cd /aws-greengrass-lite &&
             rm -rf build/ &&
             cmake -B build \
@@ -57,15 +60,21 @@ jobs:
         run: |
           mkdir -p artifacts/
           cp build/*.deb artifacts/
-          cat .github/workflows/packaging/readme.template.txt > artifacts/readme.txt
+          cat .github/workflows/packaging/readme.template.txt > \
+            artifacts/readme.txt
           cp .github/workflows/packaging/install-greengrass-lite.sh artifacts/
-          sed -i 's|{{ VERSION_LINK }}|${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|g' artifacts/readme.txt
-          sed -i 's|{{ UBUNTU_VERSION }}|24.04|g' artifacts/install-greengrass-lite.sh
+          sed -i 's|{{ VERSION_LINK }}|${{ github.server_url }}/${{
+            github.repository }}/commit/${{ github.sha }}|g' \
+            artifacts/readme.txt
+          sed -i 's|{{ UBUNTU_VERSION }}|24.04|g' \
+            artifacts/install-greengrass-lite.sh
           cat LICENSE >> artifacts/readme.txt
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: greengrass-lite-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          name: >
+            greengrass-lite-${{ github.head_ref ||
+            github.ref_name }}-${{ github.sha }}
           path: artifacts/*
           retention-days: 30

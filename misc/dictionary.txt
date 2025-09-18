@@ -151,3 +151,8 @@ xlink
 yapf
 Yocto
 YYYYMMDDTHHMMS
+snapcraft
+snapcore
+confinement
+plugs
+craftctl
