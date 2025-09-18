@@ -7,7 +7,7 @@ echo "Building AWS Greengrass Lite snap package..."
 VERSION=$(cat version)
 sed -i.bak "s/version: '.*'/version: '$VERSION'/" snap/snapcraft.yaml
 
-# Build the snap using snapcraft
-snapcraft --destructive-mode
+# Build the snap using snapcraft pack
+snapcraft pack --destructive-mode
 
 echo "Snap package built successfully!"
