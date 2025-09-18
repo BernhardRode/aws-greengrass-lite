@@ -1,0 +1,66 @@
+name: aws-greengrass-lite
+base: core22
+version: '2.2.2'
+summary: AWS IoT Greengrass runtime for constrained devices
+description: |
+  AWS IoT Greengrass nucleus lite provides a lightweight alternative to the
+  Greengrass nucleus runtime. The nucleus lite aims to be compatible with the
+  Greengrass nucleus, but implements a subset of its functionality for
+  constrained devices.
+
+title: AWS IoT Greengrass Lite
+license: Apache-2.0
+contact: https://github.com/BernhardRode/aws-greengrass-lite/issues
+website: https://github.com/BernhardRode/aws-greengrass-lite
+source-code: https://github.com/BernhardRode/aws-greengrass-lite
+issues: https://github.com/BernhardRode/aws-greengrass-lite/issues
+
+grade: stable
+confinement: strict
+
+architectures:
+  - build-on: amd64
+  - build-on: arm64
+
+apps:
+  ggconfigd:
+    command: usr/bin/ggconfigd
+    plugs: [network, network-bind]
+  iotcored:
+    command: usr/bin/iotcored
+    plugs: [network, network-bind]
+  ggl-cli:
+    command: usr/bin/ggl-cli
+    plugs: [network]
+
+parts:
+  aws-greengrass-lite:
+    plugin: cmake
+    source: .
+    cmake-parameters:
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - -DGGL_SYSTEMD_SERVICE_BUILD=OFF
+      - -DCMAKE_INSTALL_PREFIX=/usr
+    build-packages:
+      - build-essential
+      - cmake
+      - libcurl4-openssl-dev
+      - libevent-dev
+      - libjson-c-dev
+      - libsqlite3-dev
+      - libssl-dev
+      - libsystemd-dev
+      - liburiparser-dev
+      - libyaml-dev
+      - libzip-dev
+      - pkg-config
+      - uuid-dev
+    stage-packages:
+      - libcurl4
+      - libevent-2.1-7
+      - libjson-c5
+      - libsqlite3-0
+      - libssl3
+      - liburiparser1
+      - libyaml-0-2
+      - libzip4

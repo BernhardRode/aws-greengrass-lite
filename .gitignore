@@ -8,3 +8,12 @@ result
 result-*
 compile_commands.json
 *.db
+
+# Snap build artifacts
+*.snap
+parts/
+stage/
+prime/
+snap/.snapcraft/
+snap/*.bak
+.env

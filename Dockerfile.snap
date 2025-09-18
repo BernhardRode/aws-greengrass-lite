@@ -1,0 +1,53 @@
+ARG BASE_IMAGE=ubuntu:22.04
+FROM ${BASE_IMAGE}
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Install snapcraft and dependencies
+RUN apt-get update && apt-get install -y \
+    snapd \
+    squashfs-tools \
+    sudo \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN snap install --classic snapcraft
+
+# Copy source code
+COPY . /workspace
+WORKDIR /workspace
+
+# Build snap using snapcraft
+RUN ./build-snap.sh
+
+# Create runtime directories
+RUN mkdir -p /var/lib/greengrass /var/log/greengrass /etc/greengrass
+
+# Startup script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "AWS Greengrass Lite starting..."\n\
+\n\
+if [ -f /workspace/.env ]; then\n\
+    source /workspace/.env\n\
+    echo "Loaded configuration from .env"\n\
+fi\n\
+\n\
+GREENGRASS_ROOT_PATH=${GREENGRASS_ROOT_PATH:-/var/lib/greengrass}\n\
+THING_NAME=${THING_NAME:-$(hostname)}\n\
+VERSION=$(cat version)\n\
+ARCH=$(dpkg --print-architecture)\n\
+\n\
+echo "Thing Name: $THING_NAME"\n\
+echo "Greengrass Root: $GREENGRASS_ROOT_PATH"\n\
+\n\
+# Install and run snap\n\
+snap install --dangerous --devmode aws-greengrass-lite_${VERSION}_${ARCH}.snap\n\
+\n\
+# Start services\n\
+aws-greengrass-lite.ggconfigd &\n\
+sleep 2\n\
+exec aws-greengrass-lite.iotcored\n\
+' > /start-greengrass.sh && chmod +x /start-greengrass.sh
+
+CMD ["/start-greengrass.sh"]

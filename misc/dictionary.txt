@@ -151,3 +151,11 @@ xlink
 yapf
 Yocto
 YYYYMMDDTHHMMS
+snapcraft
+snapcore
+confinement
+plugs
+craftctl
+libjson
+libjson-c-dev
+libjson-c5

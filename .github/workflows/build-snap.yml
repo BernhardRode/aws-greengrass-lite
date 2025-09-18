@@ -1,0 +1,70 @@
+name: Build Snap Packages
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-snap:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            arch: amd64
+          - os: ubuntu-22.04
+            arch: arm
+          - os: ubuntu-24.04
+            arch: amd64
+          - os: ubuntu-24.04
+            arch: arm
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up build environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          squashfs-tools \
+          build-essential \
+          cmake \
+          pkg-config \
+          libssl-dev \
+          libcurl4-openssl-dev \
+          libjson-c-dev \
+          libsystemd-dev \
+          libsqlite3-dev \
+          libyaml-dev \
+          uuid-dev \
+          libevent-dev \
+          liburiparser-dev \
+          libzip-dev
+
+    - name: Get version
+      id: version
+      run: echo "VERSION=$(cat version)" >> $GITHUB_OUTPUT
+
+    - name: Build snap package
+      run: |
+        VERSION=$(cat version)
+        ARCH=${{ matrix.arch }}
+
+        mkdir -p snap-build/usr/bin
+        cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DGGL_SYSTEMD_SERVICE_BUILD=OFF -DCMAKE_INSTALL_PREFIX=/usr
+        make -C build -j$(nproc)
+        make -C build install DESTDIR=$PWD/snap-build
+
+        mkdir -p snap-build/meta
+        sed "s/version: '2.2.2'/version: '$VERSION'/" snap/snapcraft.yaml > snap-build/meta/snap.yaml
+        mksquashfs snap-build aws-greengrass-lite_${VERSION}_${ARCH}.snap -comp xz
+
+    - name: Upload snap artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: aws-greengrass-lite-${{ steps.version.outputs.VERSION }}-${{ matrix.arch }}-${{ matrix.os }}
+        path: aws-greengrass-lite_${{ steps.version.outputs.VERSION }}_${{ matrix.arch }}.snap
+        retention-days: 30
