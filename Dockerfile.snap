@@ -32,13 +32,14 @@ WORKDIR /workspace
 
 # Manual build process
 RUN VERSION=$(cat version) && \
+    ARCH=$(dpkg --print-architecture) && \
     mkdir -p snap-build/usr/bin && \
     cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DGGL_SYSTEMD_SERVICE_BUILD=OFF -DCMAKE_INSTALL_PREFIX=/usr && \
     make -C build -j$(nproc) && \
     make -C build install DESTDIR=/workspace/snap-build && \
     mkdir -p snap-build/meta && \
     sed "s/version: '2.2.2'/version: '$VERSION'/" snap/snapcraft.yaml > snap-build/meta/snap.yaml && \
-    mksquashfs snap-build aws-greengrass-lite_${VERSION}_arm64.snap -comp xz && \
+    mksquashfs snap-build aws-greengrass-lite_${VERSION}_${ARCH}.snap -comp xz && \
     mkdir -p /var/lib/greengrass /var/log/greengrass /etc/greengrass
 
 # Startup script
@@ -58,14 +59,16 @@ fi\n\
 GREENGRASS_ROOT_PATH=${GREENGRASS_ROOT_PATH:-/var/lib/greengrass}\n\
 THING_NAME=${THING_NAME:-$(hostname)}\n\
 VERSION=$(cat version)\n\
+ARCH=$(dpkg --print-architecture)\n\
 \n\
 echo "Thing Name: $THING_NAME"\n\
 echo "Greengrass Root: $GREENGRASS_ROOT_PATH"\n\
 echo "Version: $VERSION"\n\
+echo "Architecture: $ARCH"\n\
 \n\
 # Extract snap and start services\n\
 echo "Extracting snap package..."\n\
-unsquashfs -d /tmp/greengrass aws-greengrass-lite_${VERSION}_arm64.snap >/dev/null 2>&1\n\
+unsquashfs -d /tmp/greengrass aws-greengrass-lite_${VERSION}_${ARCH}.snap >/dev/null 2>&1\n\
 \n\
 # Start ggconfigd in background\n\
 echo "Starting ggconfigd..."\n\
