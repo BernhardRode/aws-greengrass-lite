@@ -8,6 +8,13 @@ description: |
   Greengrass nucleus, but implements a subset of its functionality for
   constrained devices.
 
+title: AWS IoT Greengrass Lite
+license: Apache-2.0
+contact: https://github.com/BernhardRode/aws-greengrass-lite/issues
+website: https://github.com/BernhardRode/aws-greengrass-lite
+source-code: https://github.com/BernhardRode/aws-greengrass-lite
+issues: https://github.com/BernhardRode/aws-greengrass-lite/issues
+
 grade: stable
 confinement: strict
 
