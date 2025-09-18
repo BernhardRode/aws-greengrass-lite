@@ -156,3 +156,4 @@ snapcore
 confinement
 plugs
 craftctl
+libjson
