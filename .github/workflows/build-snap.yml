@@ -13,18 +13,14 @@ jobs:
         include:
           - os: ubuntu-22.04
             arch: amd64
-            runner: ubuntu-22.04
           - os: ubuntu-22.04
             arch: arm64
-            runner: ubuntu-22.04-arm64
           - os: ubuntu-24.04
             arch: amd64
-            runner: ubuntu-24.04
           - os: ubuntu-24.04
             arch: arm64
-            runner: ubuntu-24.04-arm64
 
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v4
@@ -48,6 +44,24 @@ jobs:
           liburiparser-dev \
           libzip-dev
 
+    - name: Set up cross-compilation for ARM64
+      if: matrix.arch == 'arm64'
+      run: |
+        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        sudo dpkg --add-architecture arm64
+        sudo apt-get update
+        sudo apt-get install -y \
+          libssl-dev:arm64 \
+          libcurl4-openssl-dev:arm64 \
+          libjson-c-dev:arm64 \
+          libsystemd-dev:arm64 \
+          libsqlite3-dev:arm64 \
+          libyaml-dev:arm64 \
+          uuid-dev:arm64 \
+          libevent-dev:arm64 \
+          liburiparser-dev:arm64 \
+          libzip-dev:arm64
+
     - name: Get version
       id: version
       run: echo "VERSION=$(cat version)" >> $GITHUB_OUTPUT
@@ -55,10 +69,18 @@ jobs:
     - name: Build snap package
       run: |
         VERSION=$(cat version)
-        ARCH=$(dpkg --print-architecture)
+        ARCH=${{ matrix.arch }}
 
         mkdir -p snap-build/usr/bin
-        cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DGGL_SYSTEMD_SERVICE_BUILD=OFF -DCMAKE_INSTALL_PREFIX=/usr
+
+        if [ "$ARCH" = "arm64" ]; then
+          export CC=aarch64-linux-gnu-gcc
+          export CXX=aarch64-linux-gnu-g++
+          export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
+          CMAKE_ARGS="-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++"
+        fi
+
+        cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DGGL_SYSTEMD_SERVICE_BUILD=OFF -DCMAKE_INSTALL_PREFIX=/usr $CMAKE_ARGS
         make -C build -j$(nproc)
         make -C build install DESTDIR=$PWD/snap-build
 
