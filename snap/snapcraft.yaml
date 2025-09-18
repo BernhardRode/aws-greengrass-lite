@@ -36,6 +36,7 @@ parts:
       - -DCMAKE_INSTALL_PREFIX=/usr
     build-packages:
       - build-essential
+      - cmake
       - libcurl4-openssl-dev
       - libevent-dev
       - libjson-c-dev
