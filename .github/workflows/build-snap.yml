@@ -8,27 +8,43 @@ on:
 
 jobs:
   build-snap:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
         arch: [amd64, arm64]
-        os: [ubuntu-22-04, ubuntu-24-04, debian-12]
-        include:
-          - os: ubuntu-22-04
-            base_image: ubuntu:22.04
-          - os: ubuntu-24-04
-            base_image: ubuntu:24.04
-          - os: debian-12
-            base_image: debian:12
+    
+    runs-on: ${{ matrix.os }}
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
-      
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+    - name: Set up build environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          squashfs-tools \
+          build-essential \
+          cmake \
+          pkg-config \
+          libssl-dev \
+          libcurl4-openssl-dev \
+          libjson-c-dev \
+          libsystemd-dev \
+          libsqlite3-dev \
+          libyaml-dev \
+          uuid-dev \
+          libevent-dev \
+          liburiparser-dev \
+          libzip-dev
+    
+    - name: Set up cross-compilation for ARM64
+      if: matrix.arch == 'arm64'
+      run: |
+        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+        sudo apt-get install -y libssl-dev:arm64 libcurl4-openssl-dev:arm64 \
+          libjson-c-dev:arm64 libsystemd-dev:arm64 libsqlite3-dev:arm64 \
+          libyaml-dev:arm64 uuid-dev:arm64 libevent-dev:arm64 \
+          liburiparser-dev:arm64 libzip-dev:arm64
     
     - name: Get version
       id: version
@@ -36,18 +52,24 @@ jobs:
     
     - name: Build snap package
       run: |
-        docker buildx build \
-          --platform linux/${{ matrix.arch }} \
-          --build-arg BASE_IMAGE=${{ matrix.base_image }} \
-          -f Dockerfile.snap \
-          -t aws-greengrass-lite-snap:${{ matrix.arch }}-${{ matrix.os }} \
-          --load .
-    
-    - name: Extract snap package
-      run: |
-        CONTAINER_ID=$(docker create aws-greengrass-lite-snap:${{ matrix.arch }}-${{ matrix.os }})
-        docker cp $CONTAINER_ID:/workspace/aws-greengrass-lite_${{ steps.version.outputs.VERSION }}_${{ matrix.arch }}.snap .
-        docker rm $CONTAINER_ID
+        VERSION=$(cat version)
+        ARCH=${{ matrix.arch }}
+        
+        mkdir -p snap-build/usr/bin
+        
+        if [ "$ARCH" = "arm64" ]; then
+          export CC=aarch64-linux-gnu-gcc
+          export CXX=aarch64-linux-gnu-g++
+          export CMAKE_TOOLCHAIN_FILE="-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_SYSTEM_PROCESSOR=aarch64 -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++"
+        fi
+        
+        cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DGGL_SYSTEMD_SERVICE_BUILD=OFF -DCMAKE_INSTALL_PREFIX=/usr $CMAKE_TOOLCHAIN_FILE
+        make -C build -j$(nproc)
+        make -C build install DESTDIR=$PWD/snap-build
+        
+        mkdir -p snap-build/meta
+        sed "s/version: '2.2.2'/version: '$VERSION'/" snap/snapcraft.yaml > snap-build/meta/snap.yaml
+        mksquashfs snap-build aws-greengrass-lite_${VERSION}_${ARCH}.snap -comp xz
     
     - name: Upload snap artifact
       uses: actions/upload-artifact@v4
