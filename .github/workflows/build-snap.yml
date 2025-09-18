@@ -12,7 +12,14 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-        os: [ubuntu:22.04, ubuntu:24.04, debian:12]
+        os: [ubuntu-22-04, ubuntu-24-04, debian-12]
+        include:
+          - os: ubuntu-22-04
+            base_image: ubuntu:22.04
+          - os: ubuntu-24-04
+            base_image: ubuntu:24.04
+          - os: debian-12
+            base_image: debian:12
     
     steps:
     - uses: actions/checkout@v4
@@ -31,20 +38,20 @@ jobs:
       run: |
         docker buildx build \
           --platform linux/${{ matrix.arch }} \
-          --build-arg BASE_IMAGE=${{ matrix.os }} \
+          --build-arg BASE_IMAGE=${{ matrix.base_image }} \
           -f Dockerfile.snap \
-          -t aws-greengrass-lite-snap:${{ matrix.arch }}-$(echo ${{ matrix.os }} | tr ':' '-') \
+          -t aws-greengrass-lite-snap:${{ matrix.arch }}-${{ matrix.os }} \
           --load .
     
     - name: Extract snap package
       run: |
-        CONTAINER_ID=$(docker create aws-greengrass-lite-snap:${{ matrix.arch }}-$(echo ${{ matrix.os }} | tr ':' '-'))
+        CONTAINER_ID=$(docker create aws-greengrass-lite-snap:${{ matrix.arch }}-${{ matrix.os }})
         docker cp $CONTAINER_ID:/workspace/aws-greengrass-lite_${{ steps.version.outputs.VERSION }}_${{ matrix.arch }}.snap .
         docker rm $CONTAINER_ID
     
     - name: Upload snap artifact
       uses: actions/upload-artifact@v4
       with:
-        name: aws-greengrass-lite-${{ steps.version.outputs.VERSION }}-${{ matrix.arch }}-$(echo ${{ matrix.os }} | tr ':' '-')
+        name: aws-greengrass-lite-${{ steps.version.outputs.VERSION }}-${{ matrix.arch }}-${{ matrix.os }}
         path: aws-greengrass-lite_${{ steps.version.outputs.VERSION }}_${{ matrix.arch }}.snap
         retention-days: 30
