@@ -7,7 +7,10 @@ echo "Building AWS Greengrass Lite snap package..."
 # Check if snapcraft is installed
 if ! command -v snapcraft &> /dev/null; then
     echo "snapcraft is not installed. Installing..."
-    sudo snap install snapcraft --classic
+    if ! sudo snap install snapcraft --classic; then
+        echo "Failed to install snapcraft. Please install it manually."
+        exit 1
+    fi
 fi
 
 # Clean previous builds
