@@ -12,30 +12,46 @@ grade: stable
 confinement: strict
 
 architectures:
-  - amd64
-  - arm64
+  - build-on: [amd64, arm64]
 
 apps:
   ggconfigd:
     command: usr/bin/ggconfigd
-    daemon: simple
-    plugs:
-      - network
-      - network-bind
-      - hardware-observe
-      - system-observe
-      - mount-observe
-      - process-control
-      - log-observe
+    plugs: [network, network-bind]
   iotcored:
     command: usr/bin/iotcored
-    plugs:
-      - network
-      - network-bind
+    plugs: [network, network-bind]
   ggl-cli:
     command: usr/bin/ggl-cli
+    plugs: [network]
 
 parts:
   aws-greengrass-lite:
-    plugin: dump
+    plugin: cmake
     source: .
+    cmake-parameters:
+      - -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - -DGGL_SYSTEMD_SERVICE_BUILD=OFF
+      - -DCMAKE_INSTALL_PREFIX=/usr
+    build-packages:
+      - build-essential
+      - libcurl4-openssl-dev
+      - libevent-dev
+      - libjson-c-dev
+      - libsqlite3-dev
+      - libssl-dev
+      - libsystemd-dev
+      - liburiparser-dev
+      - libyaml-dev
+      - libzip-dev
+      - pkg-config
+      - uuid-dev
+    stage-packages:
+      - libcurl4
+      - libevent-2.1-7
+      - libjson-c5
+      - libsqlite3-0
+      - libssl3
+      - liburiparser1
+      - libyaml-0-2
+      - libzip4
