@@ -15,4 +15,5 @@ parts/
 stage/
 prime/
 snap/.snapcraft/
+snap/*.bak
 .env
