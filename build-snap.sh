@@ -8,6 +8,6 @@ VERSION=$(cat version)
 sed -i "s/version: '.*'/version: '$VERSION'/" snap/snapcraft.yaml
 
 # Build the snap using snapcraft pack
-snapcraft pack --destructive-mode
+snapcraft pack
 
 echo "Snap package built successfully!"
