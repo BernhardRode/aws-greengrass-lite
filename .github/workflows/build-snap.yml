@@ -1,0 +1,50 @@
+name: Build Snap Packages
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-snap:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+        os: [ubuntu:22.04, ubuntu:24.04, debian:12]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Get version
+      id: version
+      run: echo "VERSION=$(cat version)" >> $GITHUB_OUTPUT
+    
+    - name: Build snap package
+      run: |
+        docker buildx build \
+          --platform linux/${{ matrix.arch }} \
+          --build-arg BASE_IMAGE=${{ matrix.os }} \
+          -f Dockerfile.snap \
+          -t aws-greengrass-lite-snap:${{ matrix.arch }}-$(echo ${{ matrix.os }} | tr ':' '-') \
+          --load .
+    
+    - name: Extract snap package
+      run: |
+        CONTAINER_ID=$(docker create aws-greengrass-lite-snap:${{ matrix.arch }}-$(echo ${{ matrix.os }} | tr ':' '-'))
+        docker cp $CONTAINER_ID:/workspace/aws-greengrass-lite_${{ steps.version.outputs.VERSION }}_${{ matrix.arch }}.snap .
+        docker rm $CONTAINER_ID
+    
+    - name: Upload snap artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: aws-greengrass-lite-${{ steps.version.outputs.VERSION }}-${{ matrix.arch }}-$(echo ${{ matrix.os }} | tr ':' '-')
+        path: aws-greengrass-lite_${{ steps.version.outputs.VERSION }}_${{ matrix.arch }}.snap
+        retention-days: 30
